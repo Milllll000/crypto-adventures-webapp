@@ -6,7 +6,7 @@ async function connect() {
     let connection = await mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "iHRB$NV#17&c2@",
+        password: /*Privado*/,
         database: "cryptoadventures",
         multipleStatements: true
     });
