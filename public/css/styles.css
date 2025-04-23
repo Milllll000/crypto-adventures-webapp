@@ -29,7 +29,8 @@ html, body {
   tabla-jugadores,
   tabla-quiz,
   tabla-preguntas,
-  grafica-genero {
+  grafica-genero,
+  hora-login {
     width: 100%;
     max-width: 400px;
   }

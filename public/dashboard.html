@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+
+  <!-- W3.CSS -->
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" />
+  <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue-grey.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- Personal stylesheet (optional, for extra tweaks) -->
+  <link rel="stylesheet" href="/css/styles.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+  </style>  
+</head>
+<body class="w3-light-grey">
+
+  <!-- Top Bar -->
+  <div class="w3-bar w3-top w3-theme w3-large w3-padding">
+    <span class="w3-bar-item"><i class="fa fa-dashboard"></i> Mi Dashboard</span>
+  </div>
+
+  <!-- Main Content -->
+  <div class="w3-container" style="margin-top:70px">
+    <div class="w3-padding">
+      <h2 class="w3-center">Panel de Control</h2>
+
+      <div class="dashboard-grid">
+
+        <div class="dashboard-card">
+          <h4><i class="fa fa-users"></i> Jugadores</h4>
+          <tabla-jugadores></tabla-jugadores>
+        </div>
+
+        <div class="dashboard-card">
+          <h4><i class="fa fa-check-circle"></i> Quiz Completados</h4>
+          <tabla-quiz></tabla-quiz>
+        </div>
+
+        <div class="dashboard-card">
+          <h4><i class="fa fa-question-circle"></i> Preguntas</h4>
+          <tabla-preguntas></tabla-preguntas>
+        </div>
+
+        <div class="dashboard-card">
+          <h4><i class="fa fa-chart-pie"></i> Género</h4>
+          <grafica-genero></grafica-genero>
+        </div>
+
+        <div class="dashboard-card">
+          <h4><i class="fa fa-right-to-bracket"></i> Género</h4>
+          <hora-login></hora-login>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Lit Web Component -->
+  <script type="module">
+    import '/js/components/my-dashboard.js';
+  </script>
+
+</body>
+</html>

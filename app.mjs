@@ -1,5 +1,6 @@
 import express, { json } from "express";
-import db from "./mysql_functionality.mjs"
+import db from "./mysql_functionality.mjs";
+import { md5 } from "js-md5";
 
 // Configuración de la aplicación
 const app = express();
@@ -12,8 +13,34 @@ app.use(express.static("public"));
 // Los request bodies se leerán como JSON
 app.use(express.json());
 
+// El programa puede entender lo que viene en el URL
+app.use(express.urlencoded({ extended: true }));
+
 app.get("/", async (req, res) => {
     res.redirect("/index.html")
+});
+
+app.post("/login", async (req, res) => {
+    let connection;
+    try {
+        connection = await db.connectWebApp();
+        const rec = req.body;
+        const corr = await db.fetchLoginData(connection);
+        corr.map((datos) => {
+            if (rec.correo === datos.correo &&
+                 md5(rec.contrasena) === datos.contrasena) {
+                    res.status(200).redirect("/dashboard.html");
+                }
+        });
+        res.status(200).send("Error. Datos incorrectos.");
+    } catch {
+        res.status(500).send("Error: No se pudo establecer la conexión con la base de datos.");
+    } finally {
+        if (connection) {
+            await connection.end();
+        }
+    }
+
 });
 
 // Obtiene información de todos los jugadores

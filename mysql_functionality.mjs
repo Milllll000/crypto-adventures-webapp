@@ -13,6 +13,35 @@ async function connect() {
     return connection;
 }
 
+async function connectWebApp() {
+    let connection = await mysql.createConnection({
+        host: "localhost",
+        user: "root",
+        password: "iHRB$NV#17&c2@",
+        database: "cryptochickswebapp",
+        multipleStatements: true
+    });
+    return connection;
+}
+
+async function fetchLoginData(connection) {
+    let results = [];
+    try {
+        const sqlSelect = `SELECT correo, contrasena FROM Usuario`
+        const [rows] = await connection.execute(sqlSelect);
+        for (let row of rows) {
+            results.push({
+                correo: row.correo,
+                contrasena: row.contrasena
+            });
+        }
+    } catch (err) {
+        console.error("Error: ", err);
+        throw err;
+    }
+    return results;
+}
+
 // Obtiene todos los jugadores
 async function getAllPlayers(connection) {
     const results = [];
@@ -179,5 +208,6 @@ async function getTypicalLoginTime(connection) {
 
 export default {
     connect, getAllPlayers, getGenderDistr, getCountryDistr, getAverageGrade,
-    getWrongAnsweredQuestionsPercent, getAverageTime, getTypicalLoginTime
+    getWrongAnsweredQuestionsPercent, getAverageTime, getTypicalLoginTime, connectWebApp,
+    fetchLoginData
 }

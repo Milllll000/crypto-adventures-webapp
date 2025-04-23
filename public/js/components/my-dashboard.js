@@ -159,11 +159,33 @@ class HoraInicioSesión extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    fetch('/wrong-answered-questions-percentage')
+    fetch('/typical-login-time')
       .then((res) => res.json())
       .then((data) => {
-        this.preguntas = data;
+        this.hora = data;
       });
+  }
+
+  render() {
+    return html`
+      <div class="w3-card w3-white w3-padding w3-margin">
+        <h3>Hora típica de inicio de sesión de más común a menos común</h3>
+        <table class="w3-table-all w3-hoverable">
+          <thead>
+            <tr class="w3-light-grey">
+              <th>Hora</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${this.hora.map((p) => html`
+              <tr>
+                <td>${p.hora}</td>
+              </tr>
+            `)}
+          </tbody>
+        </table>
+      </div>
+    `;
   }
 
 }
@@ -231,11 +253,37 @@ class DistribucionGenero extends LitElement {
   }
 }
 
+// TODO
+// class DistribucionPaises extends LitElement {
+//   static properties = {
+//     data: {type: Array}
+//   }
 
+//   constructor() {
+//     super();
+//     this.pais = [];
+//     this.cantidad = [];
+//   }
+
+//   connectedCallback() {
+//     super.connectedCallback();
+//     try {
+//       fetch("/country-distribution")
+//         .then(res => res.json())
+//         .then(data => {
+//           const
+//         });
+//     } catch (err) {
+//       console.error("Error: ", err);
+//     }
+//   }
+// }
 
 customElements.define('tabla-jugadores', JugadoresTabla);
 customElements.define('tabla-quiz', QuizTabla);
 customElements.define('tabla-preguntas', PreguntasTabla);
 customElements.define('grafica-genero', DistribucionGenero);
+customElements.define('hora-login', HoraInicioSesión);
+
 
 
