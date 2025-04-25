@@ -253,37 +253,45 @@ class DistribucionGenero extends LitElement {
   }
 }
 
-// TODO
-// class DistribucionPaises extends LitElement {
-//   static properties = {
-//     data: {type: Array}
-//   }
+class DistribucionPaises extends LitElement {
+  static properties = {
+    data: {type: Array}
+  }
 
-//   constructor() {
-//     super();
-//     this.pais = [];
-//     this.cantidad = [];
-//   }
+  constructor() {
+    super();
+    this.data = [];
+  }
 
-//   connectedCallback() {
-//     super.connectedCallback();
-//     try {
-//       fetch("/country-distribution")
-//         .then(res => res.json())
-//         .then(data => {
-//           const
-//         });
-//     } catch (err) {
-//       console.error("Error: ", err);
-//     }
-//   }
-// }
+  connectedCallback() {
+    super.connectedCallback();
+    try {
+      fetch("/country-distribution")
+        .then(res => res.json())
+        .then(data => {
+          this.data = data.map(d => {
+            return {
+              pais: d.pais,
+              cantidad: d.cantidad
+            };
+          });
+        });
+    } catch (err) {
+      console.error("Error: ", err);
+    }
+  }
+
+  render() {
+    console.log(this.data);
+  }
+}
 
 customElements.define('tabla-jugadores', JugadoresTabla);
 customElements.define('tabla-quiz', QuizTabla);
 customElements.define('tabla-preguntas', PreguntasTabla);
 customElements.define('grafica-genero', DistribucionGenero);
 customElements.define('hora-login', HoraInicioSesión);
+customElements.define('grafica-paises', DistribucionPaises);
 
 
 

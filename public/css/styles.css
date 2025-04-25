@@ -1,36 +1,43 @@
 html, body {
-    font-family: "Roboto", sans-serif;
-  }
+  font-family: "Roboto", sans-serif;
+  background-color: #8ebed6; /* Fondo pastel claro */
+}
 
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
-  }
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
 
-  .dashboard-card {
-    background: white;
-    border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    
-    /* Center content */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
+.dashboard-card {
+  background: #ffe4e6; /* Rosa pastel */
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  /* Center content */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 2px solid #d0e7ff; /* Azul pastel */
+}
 
-  .dashboard-card h4 {
-    margin-bottom: 16px;
-  }
+.dashboard-card h4 {
+  margin-bottom: 16px;
+  color: #5b6abf; /* Azul pastel oscuro */
+}
 
-  tabla-jugadores,
-  tabla-quiz,
-  tabla-preguntas,
-  grafica-genero,
-  hora-login {
-    width: 100%;
-    max-width: 400px;
-  }
+tabla-jugadores,
+tabla-quiz,
+tabla-preguntas,
+grafica-genero,
+hora-login {
+  width: 100%;
+  max-width: 400px;
+  background-color: #f0f4ff; /* Azul pastel claro */
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
