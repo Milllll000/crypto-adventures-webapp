@@ -1,5 +1,6 @@
 import express, { json } from "express";
-import db from "./mysql_functionality.mjs";
+import dash from "./dashboard_db_interface.mjs";
+import game from "./game_db_interface.mjs";
 import { md5 } from "js-md5";
 
 // Configuración de la aplicación
@@ -23,9 +24,9 @@ app.get("/", async (req, res) => {
 app.post("/login", async (req, res) => {
     let connection;
     try {
-        connection = await db.connectWebApp();
+        connection = await dash.connectWebApp();
         const rec = req.body;
-        const corr = await db.fetchLoginData(connection);
+        const corr = await dash.fetchLoginData(connection);
         corr.map((datos) => {
             if (rec.correo === datos.correo &&
                  md5(rec.contrasena) === datos.contrasena) {
@@ -47,8 +48,8 @@ app.post("/login", async (req, res) => {
 app.get("/players", async (req, res) => {
     let connection;
     try {
-        connection = await db.connect();
-        const all = await db.getAllPlayers(connection);
+        connection = await dash.connect();
+        const all = await dash.getAllPlayers(connection);
         // Envía información en formato JSON
         res.json(all);
     } catch(err) {
@@ -64,8 +65,8 @@ app.get("/players", async (req, res) => {
 app.get("/gender-distribution", async (req, res) => {
     let connection;
     try {
-        connection = await db.connect();
-        const gender_distr = await db.getGenderDistr(connection);
+        connection = await dash.connect();
+        const gender_distr = await dash.getGenderDistr(connection);
         res.json(gender_distr);
     } catch {
         res.status(500).send("Error al obtener /gender-distribution");
@@ -81,8 +82,8 @@ app.get("/gender-distribution", async (req, res) => {
 app.get("/country-distribution", async (req, res) => {
     let connection;
     try {
-        connection = await db.connect();
-        const country_distr = await db.getCountryDistr(connection);
+        connection = await dash.connect();
+        const country_distr = await dash.getCountryDistr(connection);
         res.json(country_distr);
     } catch(err) {
         res.status(500).send("Error al obtener /country-distribution ", err);
@@ -98,8 +99,8 @@ app.get("/country-distribution", async (req, res) => {
 app.get("/average-grade", async (req, res) => {
     let connection;
     try {
-        connection = await db.connect();
-        const average_grade = await db.getAverageGrade(connection);
+        connection = await dash.connect();
+        const average_grade = await dash.getAverageGrade(connection);
         res.json(average_grade);
     } catch {
         res.status(500).send("Error al obtener /average-grade");
@@ -114,8 +115,8 @@ app.get("/average-grade", async (req, res) => {
 app.get("/wrong-answered-questions-percentage", async (req, res) => {
     let connection;
     try {
-        connection = await db.connect();
-        const wrong_questions = await db.getWrongAnsweredQuestionsPercent(connection);
+        connection = await dash.connect();
+        const wrong_questions = await dash.getWrongAnsweredQuestionsPercent(connection);
         res.json(wrong_questions);
     } catch {
         res.status(500).send("Error al obtener /wrong-answered-questions-percentage");
@@ -130,8 +131,8 @@ app.get("/wrong-answered-questions-percentage", async (req, res) => {
 app.get("/average-time", async (req, res) => {
     let connection;
     try {
-        connection = await db.connect();
-        const average_time = await db.getAverageTime(connection);
+        connection = await dash.connect();
+        const average_time = await dash.getAverageTime(connection);
         res.json(average_time);
     } catch (err) {
         res.status(500).send("Error al obtener /average-time ", err);
@@ -146,14 +147,30 @@ app.get("/average-time", async (req, res) => {
 app.get("/typical-login-time", async (req, res) => {
     let connection;
     try {
-        connection = await db.connect();
-        const typical_login = await db.getTypicalLoginTime(connection);
+        connection = await dash.connect();
+        const typical_login = await dash.getTypicalLoginTime(connection);
         res.json(typical_login);
     } catch (err) {
         res.status(500).send("Error al obtener /typical-login-time ", err);
     } finally {
         if (connection) {
             connection.end();
+        }
+    }
+});
+
+app.post("/register", async (req, res) => {
+    let connection;
+    try {
+        connection = await dash.connect();
+        const datos_usuario = JSON.parse(req.body);
+        game.insertJugador(connection, datos_usuario);
+        res.status(200).json({ message: "Usuario registrado correctamente." });
+    } catch (err) {
+        res.status(500).send("Error: No se pudo establecer la conexión con la base de datos.");
+    } finally {
+        if (connection) {
+            await connection.end();
         }
     }
 });

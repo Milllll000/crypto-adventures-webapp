@@ -33,7 +33,9 @@ tabla-jugadores,
 tabla-quiz,
 tabla-preguntas,
 grafica-genero,
-hora-login {
+hora-login,
+grafica-paises,
+tiempo-promedio {
   width: 100%;
   max-width: 400px;
   background-color: #f0f4ff; /* Azul pastel claro */

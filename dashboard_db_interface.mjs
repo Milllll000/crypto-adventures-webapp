@@ -6,7 +6,7 @@ async function connect() {
     let connection = await mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "iHRB$NV#17&c2@",
+        password: "privado" ,
         database: "cryptoadventures",
         multipleStatements: true
     });
@@ -17,7 +17,7 @@ async function connectWebApp() {
     let connection = await mysql.createConnection({
         host: "localhost",
         user: "root",
-        password: "iHRB$NV#17&c2@",
+        password: "privado",
         database: "cryptochickswebapp",
         multipleStatements: true
     });

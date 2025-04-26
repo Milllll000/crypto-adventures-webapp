@@ -255,34 +255,93 @@ class DistribucionGenero extends LitElement {
 
 class DistribucionPaises extends LitElement {
   static properties = {
-    data: {type: Array}
+    data: {type: Object}
   }
 
   constructor() {
     super();
-    this.data = [];
+    this.data = { labels: [], values: [] };
   }
 
   connectedCallback() {
     super.connectedCallback();
     try {
       fetch("/country-distribution")
-        .then(res => res.json())
-        .then(data => {
-          this.data = data.map(d => {
-            return {
-              pais: d.pais,
-              cantidad: d.cantidad
-            };
-          });
-        });
+      .then(res => res.json())
+      .then(data => {
+        const labels = data.map(d => d.pais);
+        const values = data.map(d => d.cantidad);
+        this.data = { labels, values };
+      });
     } catch (err) {
       console.error("Error: ", err);
     }
   }
 
+  updated(changedProperties) {
+    if (changedProperties.has('data') && this.data.labels.length > 0) {
+      this.drawChart();
+    }
+  }
+
+  drawChart() {
+    const canvas = this.renderRoot.querySelector("#graficaDistribucionPaises");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: this.data.labels,
+        datasets: [{
+          label: "Distribución de países de jugadores",
+          data: this.data.values
+        }]
+      },
+      options: {
+        responsive: true
+      }
+    });
+  }
+
   render() {
-    console.log(this.data);
+    return html`
+      <div class="w3-card w3-white w3-padding w3-margin">
+        <h3>Distribución de países de jugadores</h3>
+        <canvas id="graficaDistribucionPaises" max-width="300" max-height="300"></canvas>
+      </div>
+    `;
+  }
+}
+
+class TiempoPromedio extends LitElement {
+  static properties = {
+    tiempo: {type: Number}
+  };
+
+  constructor() {
+    super();
+    this.tiempo = 0;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    fetch('/average-time')
+      .then((res) => res.json())
+      .then((data) => {
+        this.tiempo = Math.round(data[0].tiempo_promedio);
+      });
+  }
+  
+
+  render() {
+    return html`
+      <div class="w3-card w3-white w3-padding w3-margin">
+        <h3>Tiempo promedio por sesión</h3>
+        <h4>${this.tiempo} minutos</h4>
+      </div>
+    `;
   }
 }
 
@@ -292,6 +351,7 @@ customElements.define('tabla-preguntas', PreguntasTabla);
 customElements.define('grafica-genero', DistribucionGenero);
 customElements.define('hora-login', HoraInicioSesión);
 customElements.define('grafica-paises', DistribucionPaises);
+customElements.define('tiempo-promedio', TiempoPromedio);
 
 
 
