@@ -1,12 +1,14 @@
 import express, { json } from "express";
 import dash from "./dashboard_db_interface.mjs";
 import game from "./game_db_interface.mjs";
+// Encriptación básica para las contraseñas. Se puede cambiar,
+// pero es necesario avisar
 import { md5 } from "js-md5";
 
 // Configuración de la aplicación
 const app = express();
-const ip_address = "localhost";
-const port = 8080;
+const ip_address = process.env.C9_HOSTNAME ?? "localhost";
+const port = process.env.PORT ?? 8080;
 
 // Busca recursos estáticos en "public"
 app.use(express.static("public"));
@@ -14,19 +16,20 @@ app.use(express.static("public"));
 // Los request bodies se leerán como JSON
 app.use(express.json());
 
-// El programa puede entender lo que viene en el URL
+// El programa puede entender lo que viene en el URL,
+// necesario para el login del dashboard
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", async (req, res) => {
     res.redirect("/index.html")
 });
 
-app.post("/login", async (req, res) => {
+app.get("/dash/login", async (req, res) => {
     let connection;
     try {
-        connection = await dash.connectWebApp();
+        connection = await dash.conectarDash();
         const rec = req.body;
-        const corr = await dash.fetchLoginData(connection);
+        const corr = await dash.loginDash(connection);
         corr.map((datos) => {
             if (rec.correo === datos.correo &&
                  md5(rec.contrasena) === datos.contrasena) {
@@ -163,11 +166,11 @@ app.post("/register", async (req, res) => {
     let connection;
     try {
         connection = await dash.connect();
-        const datos_usuario = JSON.parse(req.body);
-        game.insertJugador(connection, datos_usuario);
+        const datos_usuario = req.body;
+        await game.insertarJugador(connection, datos_usuario);
         res.status(200).json({ message: "Usuario registrado correctamente." });
     } catch (err) {
-        res.status(500).send("Error: No se pudo establecer la conexión con la base de datos.");
+        res.status(500).send(`Error: No se pudo establecer la conexión con la base de datos. ${err}`);
     } finally {
         if (connection) {
             await connection.end();

@@ -1,33 +1,39 @@
+// Archivo para todas las interacciones del dashboard con la base de datos
+// Autor: Allan Brenes
+
 import mysql from "mysql2/promise";
 
 // Función para conectarse a la base de datos
+// Se usa tanto para la conexión con el dashboard y con el juego.
 // Asegurarse de cambiar los datos a los de la base de datos que se esté usando
 async function connect() {
     let connection = await mysql.createConnection({
-        host: "localhost",
-        user: "root",
-        password: "privado" ,
+        host: process.env.CRADV_MYSQL_HOST,
+        user: process.env.CRADV_MYSQL_USER,
+        password: process.env.CRADV_MYSQL_PASSWORD ,
         database: "cryptoadventures",
         multipleStatements: true
     });
     return connection;
 }
 
-async function connectWebApp() {
+// Hace login a la BD donde se almacenan los datos del dashboard
+async function conectarDash() {
     let connection = await mysql.createConnection({
-        host: "localhost",
-        user: "root",
-        password: "privado",
+        host: process.env.WEBAPP_MYSQL_HOST,
+        user: process.env.WEBAPP_MYSQL_USER,
+        password: process.env.WEBAPP_MYSQL_PASSWORD,
         database: "cryptochickswebapp",
         multipleStatements: true
     });
     return connection;
 }
 
-async function fetchLoginData(connection) {
+// Login para los usuarios del dashboard
+async function loginDash(connection) {
     let results = [];
     try {
-        const sqlSelect = `SELECT correo, contrasena FROM Usuario`
+        const sqlSelect = `SELECT correo, contrasena FROM usuario`
         const [rows] = await connection.execute(sqlSelect);
         for (let row of rows) {
             results.push({
@@ -49,7 +55,7 @@ async function getAllPlayers(connection) {
             // Query
             const sqlSelect = 
             "SELECT nombre, apellido, pais, correo, fecha_nacimiento, " +
-            "fecha_registro FROM Jugadores";
+            "fecha_registro FROM jugadores";
         // Ejecución de query en BD
         const [rows] = await connection.execute(sqlSelect);
         for (let row of rows) {
@@ -73,7 +79,7 @@ async function getGenderDistr(connection) {
     let results = [];
     try {
         const sqlSelect = 
-            "SELECT genero, COUNT(*) AS cantidad FROM Jugadores GROUP BY genero";
+            "SELECT genero, COUNT(*) AS cantidad FROM jugadores GROUP BY genero";
         const [rows] = await connection.execute(sqlSelect);
         for (let row of rows) {
             results.push({
@@ -91,7 +97,7 @@ async function getGenderDistr(connection) {
 async function getCountryDistr(connection) {
     const results = [];
     try {
-        const sqlSelect = "SELECT pais, COUNT(*) as cantidad FROM Jugadores GROUP BY pais;";
+        const sqlSelect = "SELECT pais, COUNT(*) as cantidad FROM jugadores GROUP BY pais;";
         const [rows] = await connection.execute(sqlSelect);
         for (let row of rows) {
             results.push({
@@ -112,9 +118,9 @@ async function getAverageGrade(connection) {
         const sqlSelect = "SELECT l.id_curso AS curso, " 
         + "e.id_leccion AS leccion, je.id_examen AS examen, "
         + "AVG(je.calificacion) AS promedio "
-        + "FROM JugadoresExamenes "
-        + "je JOIN Examenes e ON je.id_examen = e.id_examen "
-        + "JOIN Lecciones l ON e.id_leccion = l.id_leccion "
+        + "FROM jugadoresexamenes "
+        + "je JOIN examenes e ON je.id_examen = e.id_examen "
+        + "JOIN lecciones l ON e.id_leccion = l.id_leccion "
         + "GROUP BY l.id_curso, e.id_leccion, e.id_examen";
         const [rows] = await connection.execute(sqlSelect);
         for (let row of rows) {
@@ -125,7 +131,7 @@ async function getAverageGrade(connection) {
                 promedio: row.promedio
             });
         }
-    } catch {
+    } catch(err) {
         console.error("Query error: ", err);
         throw err;
     }
@@ -137,15 +143,15 @@ async function getWrongAnsweredQuestionsPercent(connection) {
     try {
         const sqlSelect = "WITH " +
         "inc AS (SELECT COUNT(*) AS incorrectas, id_pregunta " +
-            "FROM JugadoresPreguntas " +
+            "FROM jugadorespreguntas " +
             "WHERE contestado_correct = 0 " +
             "GROUP BY contestado_correct, id_pregunta), " +
         "corr AS (SELECT COUNT(*) AS correctas, id_pregunta " +
-            "FROM JugadoresPreguntas " +
+            "FROM jugadorespreguntas " +
             "WHERE contestado_correct = 1 " +
             "GROUP BY contestado_correct, id_pregunta) " +
         "SELECT jp.id_pregunta AS pregunta, incorrectas/(incorrectas + correctas) AS porcentaje " +
-            "FROM JugadoresPreguntas jp " +
+            "FROM jugadorespreguntas jp " +
             "JOIN inc ON jp.id_pregunta = inc.id_pregunta " +
             "JOIN corr ON jp.id_pregunta = corr.id_pregunta " +
             "GROUP BY jp.id_pregunta";
@@ -208,6 +214,6 @@ async function getTypicalLoginTime(connection) {
 
 export default {
     connect, getAllPlayers, getGenderDistr, getCountryDistr, getAverageGrade,
-    getWrongAnsweredQuestionsPercent, getAverageTime, getTypicalLoginTime, connectWebApp,
-    fetchLoginData
+    getWrongAnsweredQuestionsPercent, getAverageTime, getTypicalLoginTime, conectarDash,
+    loginDash
 }
