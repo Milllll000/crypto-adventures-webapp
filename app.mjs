@@ -1,4 +1,6 @@
 import express, { json } from "express";
+import session from "express-session"
+import { v4 as uuidv4 } from "uuid"
 import dash from "./dashboard_db_interface.mjs";
 import game from "./game_db_interface.mjs";
 // Encriptación básica para las contraseñas. Se puede cambiar,
@@ -16,9 +18,33 @@ app.use(express.static("public"));
 // Los request bodies se leerán como JSON
 app.use(express.json());
 
+// Configuración de sesiones
+app.use(session({
+    secret: "Bum biddy biddy biddy bum bum",
+    genid: (req) => { return uuidv4() },
+    cookie: {}
+}))
+
 // El programa puede entender lo que viene en el URL,
 // necesario para el login del dashboard
 app.use(express.urlencoded({ extended: true }));
+
+/*************************************************
+ * Middleware
+ ************************************************/
+// Para juego
+function checarAutenticacion(req, res, next) {
+    if (req.session.id_jugador) {
+        next();
+    } else {
+        res.redirect("test_login.html");
+        res.json({ mensaje: "Por favor, inicie sesión." });
+    }
+}
+
+/*************************************************
+ * Endpoints para el dashboard
+ ************************************************/
 
 app.get("/", async (req, res) => {
     res.redirect("/index.html")
@@ -162,15 +188,73 @@ app.get("/typical-login-time", async (req, res) => {
     }
 });
 
+
+/*************************************************
+ * Endpoints para el juego
+ ************************************************/
+
+// Registra un jugador en la base de datos
 app.post("/register", async (req, res) => {
     let connection;
     try {
         connection = await dash.connect();
         const datos_usuario = req.body;
         await game.insertarJugador(connection, datos_usuario);
-        res.status(200).json({ message: "Usuario registrado correctamente." });
+        res.status(201).json({ message: "Usuario registrado correctamente." });
     } catch (err) {
-        res.status(500).send(`Error: No se pudo establecer la conexión con la base de datos. ${err}`);
+        res.status(500).json( { message: `Error: No se pudo establecer la conexión con la base de datos. ${err}` } );
+    } finally {
+        if (connection) {
+            await connection.end();
+        }
+    }
+});
+
+app.get("/game/login", async (req, res) => {
+    let connection;
+    try {
+        connection = await dash.connect();
+        console.log(req.query);
+        const correo = req.query.correo;
+        // Si se ingresaron datos correctos
+        const match = await game.iniciarSesion(connection, correo, req.query.contrasena)
+        console.log(match);
+        if (match){
+            req.session.id_jugador = await game.obtenerID(connection, correo);
+            await game.registrarLogin(connection, req.session.id_jugador);
+            res.redirect("/dashboard");
+        } else {
+            res.json({ autenticado: 0 });
+        }
+    } catch (err) {
+        res.status(500).json( { message: `Error: No se pudo establecer la conexión con la base de datos. ${err}` } );
+    } finally {
+        if (connection) {
+            await connection.end();
+        }
+    }
+});
+
+app.get("/dashboard", checarAutenticacion, (req, res) => {
+    res.redirect("/test_logout.html");
+});
+
+app.get("/game/logout", checarAutenticacion, async (req, res) => {
+    let connection;
+    try {
+        connection = await dash.connect();
+        const id_jugador = req.session.id_jugador
+        req.session.destroy(async (err) => {
+            if (err) {
+                console.error("Error al terminar la sesión con id: ", req.session.genid);
+                console.error("Error: ", err);
+                throw err;
+            }
+        });
+        await game.registrarLogout(connection, id_jugador);
+        res.json({ message: "Logout registrado." });
+    } catch (err) {
+        res.status(500).json( { message: `Error: No se pudo establecer la conexión con la base de datos. ${err}` } );
     } finally {
         if (connection) {
             await connection.end();
