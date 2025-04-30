@@ -91,7 +91,7 @@ async function getCountryDistr(connection) {
                 cantidad: row.cantidad
             });
         }    
-    } catch {
+    } catch(err) {
         console.error("Query error: ", err);
         throw err;
     }
@@ -199,7 +199,7 @@ async function getTypicalLoginTime(connection) {
 }
 
 export default {
-    connect, getAllPlayers, getGenderDistr, getCountryDistr, getAverageGrade,
+    getAllPlayers, getGenderDistr, getCountryDistr, getAverageGrade,
     getWrongAnsweredQuestionsPercent, getAverageTime, getTypicalLoginTime, conectarDash,
     loginDash
 }
