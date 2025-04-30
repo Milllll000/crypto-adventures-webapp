@@ -83,10 +83,10 @@ async function registrarLogout(connection, id_jugador) {
     }
 }
 
-async function registrarProgresoPregunta(connection, id_examen, id_jugador, correcto) {
+async function registrarProgresoPregunta(connection, id_pregunta, id_jugador, correcto) {
     try {
         const sqlInsert = "CALL registrarProgresoPregunta(?, ?, ?)";
-        connection.execute(sqlInsert, [id_examen, id_jugador, correcto]);
+        connection.execute(sqlInsert, [id_pregunta, id_jugador, correcto]);
     } catch (err) {
         console.error("Error: ", err);
         throw err;

@@ -209,7 +209,7 @@ app.get("/typical-login-time", async (req, res) => {
  ************************************************/
 
 // Registra un jugador en la base de datos
-app.post("/register", async (req, res) => {
+app.post("/registrar", async (req, res) => {
     let connection;
     try {
         connection = await conectar();
@@ -276,7 +276,7 @@ app.post("/juego/guardar-pregunta", checarAutenticacion, async (req, res) => {
     try {
         connection = await conectar();
         const datos = req.query;
-        await game.registrarProgresoPregunta(connection, datos.examen,
+        await game.registrarProgresoPregunta(connection, datos.pregunta ,
             req.session.id_jugador, datos.correcto);
     } catch(err) {
         res.json({ mensaje: `Error al tratar de guardar registro de pregunta. ${ err }` });
