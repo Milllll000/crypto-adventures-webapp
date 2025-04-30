@@ -3,20 +3,6 @@
 
 import mysql from "mysql2/promise";
 
-// Función para conectarse a la base de datos
-// Se usa tanto para la conexión con el dashboard y con el juego.
-// Asegurarse de cambiar los datos a los de la base de datos que se esté usando
-async function connect() {
-    let connection = await mysql.createConnection({
-        host: process.env.CRADV_MYSQL_HOST,
-        user: process.env.CRADV_MYSQL_USER,
-        password: process.env.CRADV_MYSQL_PASSWORD ,
-        database: "cryptoadventures",
-        multipleStatements: true
-    });
-    return connection;
-}
-
 // Hace login a la BD donde se almacenan los datos del dashboard
 async function conectarDash() {
     let connection = await mysql.createConnection({

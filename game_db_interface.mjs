@@ -6,7 +6,7 @@ import { md5 } from "js-md5";
 // Obtener ID del jugador
 async function obtenerID(connection, correo) {
     try {
-        const sqlInsert = "SELECT id_jugador as id FROM jugadores WHERE correo = ?";
+        const sqlInsert = "SELECT id_jugador AS id FROM jugadores WHERE correo = ?";
         const [rows] = await connection.execute(sqlInsert, [correo]);
         return parseInt(rows[0].id);
     } catch (err) {
@@ -82,7 +82,28 @@ async function registrarLogout(connection, id_jugador) {
         throw err;
     }
 }
+
+async function registrarProgresoPregunta(connection, id_examen, id_jugador, correcto) {
+    try {
+        const sqlInsert = "CALL registrarProgresoPregunta(?, ?, ?)";
+        connection.execute(sqlInsert, [id_examen, id_jugador, correcto]);
+    } catch (err) {
+        console.error("Error: ", err);
+        throw err;
+    }
+}
+
+async function registrarProgresoExamen(connection, id_examen, id_jugador, calificacion) {
+    try {
+        const sqlInsert = "CALL registrarProgresoExamen(?, ?, ?)";
+        connection.execute(sqlInsert, [id_examen, id_jugador, calificacion]);
+    } catch (err) {
+        console.error("Error: ", err);
+        throw err;
+    }
+}
+
 export default {
     insertarJugador, obtenerID, iniciarSesion, obtenerID, registrarLogin,
-    registrarLogout
+    registrarLogout, registrarProgresoPregunta, registrarProgresoExamen
 }
