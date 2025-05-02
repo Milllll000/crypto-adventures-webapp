@@ -2,13 +2,14 @@
 // Autor: Allan Brenes
 
 import mysql from "mysql2/promise";
+import bcrypt from "bcrypt";
 
 // Hace login a la BD donde se almacenan los datos del dashboard
 async function conectarDash() {
     let connection = await mysql.createConnection({
-        host: process.env.WEBAPP_MYSQL_HOST,
-        user: process.env.WEBAPP_MYSQL_USER,
-        password: process.env.WEBAPP_MYSQL_PASSWORD,
+        host: process.env.CRADV_MYSQL_HOST,
+        user: process.env.CRADV_MYSQL_USER,
+        password: process.env.CRADV_MYSQL_PASSWORD,
         database: "cryptochickswebapp",
         multipleStatements: true
     });
@@ -16,22 +17,28 @@ async function conectarDash() {
 }
 
 // Login para los usuarios del dashboard
-async function loginDash(connection) {
-    let results = [];
+async function loginDash(connection, correo, contrasena) {
     try {
-        const sqlSelect = `SELECT correo, contrasena FROM usuario`
-        const [rows] = await connection.execute(sqlSelect);
-        for (let row of rows) {
-            results.push({
-                correo: row.correo,
-                contrasena: row.contrasena
-            });
+        const sqlInsert = "CALL iniciarSesion(?)";
+        const [rows] = await connection.query(sqlInsert, [correo]);
+        const datos = rows[0][0];
+        // Si no se encuentran registros, se regresa falso
+        if (!rows[0].length) {
+            return false;
         }
+        // TODO: Hacer un hashing a las contraseñas para evitar
+        // vulnerabilidades.
+        // Si las contraseñas no coinciden, se regresa falso
+        const hash = md5(contrasena);
+        if (hash !== datos.contrasena) {
+            console.log("Contraseña incorrecta.")
+            return false;
+        }
+        return true;
     } catch (err) {
         console.error("Error: ", err);
         throw err;
     }
-    return results;
 }
 
 // Obtiene todos los jugadores

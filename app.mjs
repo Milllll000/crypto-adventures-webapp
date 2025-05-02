@@ -1,17 +1,20 @@
 import express, { json } from "express";
 import session from "express-session";
-import mysql from "mysql2";
+import mysql from "mysql2/promise";
 import { v4 as uuidv4 } from "uuid";
 import dash from "./dashboard_db_interface.mjs";
 import game from "./game_db_interface.mjs";
 // Encriptación básica para las contraseñas. Se puede cambiar,
 // pero es necesario avisar
-import { md5 } from "js-md5";
 
 // Configuración de la aplicación
 const app = express();
 const ip_address = process.env.C9_HOSTNAME ?? "localhost";
 const port = process.env.PORT ?? 8080;
+
+// El programa puede entender lo que viene en el URL,
+// necesario para el login del dashboard
+app.use(express.urlencoded({ extended: true }));
 
 // Busca recursos estáticos en "public"
 app.use(express.static("public"));
@@ -26,22 +29,20 @@ app.use(session({
     cookie: {}
 }))
 
-// El programa puede entender lo que viene en el URL,
-// necesario para el login del dashboard
-app.use(express.urlencoded({ extended: true }));
-
 /*************************************************
  * Middleware
  ************************************************/
 // Para juego
+/*
 function checarAutenticacion(req, res, next) {
     if (req.session.id_jugador) {
         next();
     } else {
-        res.redirect("test_login.html");
-        res.json({ mensaje: "Por favor, inicie sesión." });
+        res.redirect("/");
+        console.log("Error! Inicie sesión.")
     }
 }
+*/
 
 /*************************************************
  * Funciones generales
@@ -69,17 +70,16 @@ app.get("/dash/login", async (req, res) => {
     let connection;
     try {
         connection = await dash.conectarDash();
-        const rec = req.body;
-        const corr = await dash.loginDash(connection);
-        corr.map((datos) => {
-            if (rec.correo === datos.correo &&
-                 md5(rec.contrasena) === datos.contrasena) {
-                    res.status(200).redirect("/dashboard.html");
-                }
-        });
-        res.status(200).send("Error. Datos incorrectos.");
-    } catch {
-        res.status(500).send("Error: No se pudo establecer la conexión con la base de datos.");
+        const match = await dash.loginDash(connection, req.query.correo, req.query.contrasena);
+        console.log(match);
+        if (match) {
+            res.redirect("/dashboard.html");
+        } else {
+            res.send("Error: datos incorrectos.")
+        }
+    } catch(err) {
+        res.status(500).send("Error al tratar de conectarse a la base de datos.");
+        console.error(err);
     } finally {
         if (connection) {
             await connection.end();
@@ -215,9 +215,11 @@ app.post("/registrar", async (req, res) => {
         connection = await conectar();
         const datos_usuario = req.body;
         await game.insertarJugador(connection, datos_usuario);
-        res.status(201).json({ mensaje: "Usuario registrado correctamente." });
+        res.status(201).json({ mensaje: 1 });
     } catch (err) {
-        res.status(500).json( { mensaje: `Error: No se pudo establecer la conexión con la base de datos. ${err}` } );
+        res.status(500).json( { mensaje: 0 } );
+        console.error("Error al tratar de registrar jugador: ");
+        console.error(`Error: No se pudo establecer la conexión con la base de datos. ${err}`);
     } finally {
         if (connection) {
             await connection.end();
@@ -229,11 +231,12 @@ app.get("/juego/login", async (req, res) => {
     let connection;
     try {
         connection = await conectar();
-        const correo = req.query.correo;
+        const datos = req.query;
+        console.log("En endpoint: ", datos);
         // Si se ingresaron datos correctos, se confirma la autenticación
-        const match = await game.iniciarSesion(connection, correo, req.query.contrasena)
+        const match = await game.iniciarSesion(connection, datos.correo, datos.contrasena);
         if (match) {
-            req.session.id_jugador = await game.obtenerID(connection, correo);
+            req.session.id_jugador = await game.obtenerID(connection, datos.correo);
             await game.registrarLogin(connection, req.session.id_jugador);
             res.json({ autenticado: 1 });
         } else {
@@ -248,7 +251,7 @@ app.get("/juego/login", async (req, res) => {
     }
 });
 
-app.put("/juego/logout", checarAutenticacion, async (req, res) => {
+app.put("/juego/logout", /*checarAutenticacion*/ async (req, res) => {
     let connection;
     try {
         connection = await conectar();
@@ -261,7 +264,7 @@ app.put("/juego/logout", checarAutenticacion, async (req, res) => {
             }
         });
         await game.registrarLogout(connection, id_jugador);
-        res.json({ mensaje: "Logout registrado." });
+        res.json({ mensaje: 1 });
     } catch (err) {
         res.status(500).json( { mensaje: `Error: No se pudo establecer la conexión con la base de datos. ${err}` } );
     } finally {
@@ -271,15 +274,18 @@ app.put("/juego/logout", checarAutenticacion, async (req, res) => {
     }
 });
 
-app.post("/juego/guardar-pregunta", checarAutenticacion, async (req, res) => {
+app.post("/juego/guardar-pregunta", /*checarAutenticacion,*/ async (req, res) => {
     let connection;
     try {
         connection = await conectar();
-        const datos = req.query;
-        await game.registrarProgresoPregunta(connection, datos.pregunta ,
+        console.log(req.body);
+        const datos = req.body;
+        await game.registrarProgresoPregunta(connection, datos.pregunta,
             req.session.id_jugador, datos.correcto);
+        res.json({ mensaje: 1 });
     } catch(err) {
-        res.json({ mensaje: `Error al tratar de guardar registro de pregunta. ${ err }` });
+        res.json({ mensaje: 0 });
+        console.error(`Error al tratar de guardar registro de pregunta. ${ err }`)
     } finally {
         if(connection) {
             connection.end();
@@ -287,15 +293,17 @@ app.post("/juego/guardar-pregunta", checarAutenticacion, async (req, res) => {
     }
 });
 
-app.post("/juego/guardar-examen", checarAutenticacion, async (req, res) => {
+app.post("/juego/guardar-examen", /*checarAutenticacion,*/ async (req, res) => {
     let connection;
     try {
         connection = await conectar();
-        const datos = req.query;
+        const datos = req.body;
         await game.registrarProgresoExamen(connection, datos.examen,
             req.session.id_jugador, datos.calificacion);
+        res.json({ mensaje: 1 });
     } catch(err) {
-        res.json({ mensaje: `Error al tratar de guardar registro de examen. ${ err }` });
+        res.json({ mensaje: 0 });
+        console.error(`Error al tratar de guardar registro de examen. ${ err }`);
     } finally {
         if(connection) {
             connection.end();
@@ -306,6 +314,7 @@ app.post("/juego/guardar-examen", checarAutenticacion, async (req, res) => {
 app.use((req, res) => {
     const url = req.originalUrl;
     res.status(404).json({ mensaje: `Not Found: ${ url }` });
+    console.error(url);
 });
 
 app.listen(port, () => {
