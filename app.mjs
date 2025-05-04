@@ -1,3 +1,4 @@
+import cors from "cors";
 import express, { json } from "express";
 import session from "express-session";
 import mysql from "mysql2/promise";
@@ -11,6 +12,8 @@ import game from "./game_db_interface.mjs";
 const app = express();
 const ip_address = process.env.C9_HOSTNAME ?? "localhost";
 const port = process.env.PORT ?? 8080;
+
+app.use(cors());
 
 // El programa puede entender lo que viene en el URL,
 // necesario para el login del dashboard
@@ -38,8 +41,7 @@ function checarAutenticacion(req, res, next) {
     if (req.session.id_jugador) {
         next();
     } else {
-        res.redirect("/");
-        console.log("Error! Inicie sesión.")
+        res.json({ mensaje: "Error! Inicie sesión." })
     }
 }
 */
@@ -64,6 +66,27 @@ function checarAutenticacion(req, res, next) {
 
 app.get("/", async (req, res) => {
     res.redirect("/index.html")
+});
+
+app.post("/dash/registrar", async (req, res) => {
+    let connection;
+    try {
+        connection = await dash.conectarDash();
+        const datos = req.body;
+        const exito = await dash.registrarUsuario(connection, datos.nombre, 
+                            datos.apellido, datos.correo, datos.contrasena);
+        if (exito) {
+            res.json({ mensaje: "Registrado exitosamente." });
+        } else {
+            res.json({ mensaje: `Error al registar usuario ${ datos.correo }` });
+        }
+    } catch(err) {
+        res.status(500).json({ mensaje: `Error al tratar de registrar usuario: ${ err }` });
+    } finally {
+        if (connection) {
+            connection.end();
+        }
+    }    
 });
 
 app.get("/dash/login", async (req, res) => {
@@ -232,11 +255,11 @@ app.get("/juego/login", async (req, res) => {
     try {
         connection = await conectar();
         const datos = req.query;
-        console.log("En endpoint: ", datos);
         // Si se ingresaron datos correctos, se confirma la autenticación
         const match = await game.iniciarSesion(connection, datos.correo, datos.contrasena);
         if (match) {
             req.session.id_jugador = await game.obtenerID(connection, datos.correo);
+            
             await game.registrarLogin(connection, req.session.id_jugador);
             res.json({ autenticado: 1 });
         } else {
@@ -251,29 +274,43 @@ app.get("/juego/login", async (req, res) => {
     }
 });
 
+// Registra la hora de salida de sesión y destruye la sesión del servidor
 app.put("/juego/logout", /*checarAutenticacion*/ async (req, res) => {
     let connection;
+    // Guarda el id para borrar correctamente la sesión
+    const id_jugador = req.session.id_jugador;
     try {
         connection = await conectar();
-        const id_jugador = req.session.id_jugador
-        req.session.destroy((err) => {
+        if (connection) console.log("Conexión con la BD creada correctamente.");
+        req.session.destroy(async (err) => {
+            // Se activa cuando hay errores relacionados con la
+            // destrucción de la sesión
             if (err) {
                 console.error("Error al terminar la sesión con id: ", req.session.genid);
                 console.error("Error: ", err);
                 throw err;
             }
+            try {
+                if (connection) console.log("Conexión sigue abierta.");
+                if (id_jugador) console.log("Id de jugador: ", id_jugador);
+                await game.registrarLogout(connection, id_jugador);
+                res.json({ mensaje: 1 });
+            } catch(errorDB) {
+                console.error("Error al registrar logout:", errorDB);
+                res.status(500).json({ mensaje: "Error al registrar logout." });
+            } finally {
+                if (connection) {
+                    connection.end();
+                }
+            }
         });
-        await game.registrarLogout(connection, id_jugador);
-        res.json({ mensaje: 1 });
     } catch (err) {
-        res.status(500).json( { mensaje: `Error: No se pudo establecer la conexión con la base de datos. ${err}` } );
-    } finally {
-        if (connection) {
-            await connection.end();
-        }
+        res.status(500).json( { mensaje: `Error: No se pudo establecer la conexión con la base de datos.` } );
+        console.error("Error: No se pudo establecer la conexión con la base de datos: ", err);
     }
 });
 
+// Guarda registro de la pregunta contestada 
 app.post("/juego/guardar-pregunta", /*checarAutenticacion,*/ async (req, res) => {
     let connection;
     try {
@@ -293,6 +330,7 @@ app.post("/juego/guardar-pregunta", /*checarAutenticacion,*/ async (req, res) =>
     }
 });
 
+// Guarda el progreso de la realización del examen
 app.post("/juego/guardar-examen", /*checarAutenticacion,*/ async (req, res) => {
     let connection;
     try {
@@ -319,4 +357,6 @@ app.use((req, res) => {
 
 app.listen(port, () => {
     console.log(`Esperando conexión en http://${ip_address}:${port}`);
+    console.log("Para entrar al dashboard, simplemente entre al link de arriba.");
+    console.log("Inicie sesión con una cuenta de prueba.")
 });

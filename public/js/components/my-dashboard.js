@@ -19,10 +19,13 @@ class JugadoresTabla extends LitElement {
       });
   }
   
+  createRenderRoot() {
+    return this;
+  }
 
   render() {
     return html`
-      <div class="w3-card w3-white w3-padding w3-margin">
+      <div class="w3-card w3-white w3-padding w3-margin w3-center">
         <h3>Información de todos los jugadores</h3>
         <table class="w3-table-all w3-hoverable">
           <thead>
@@ -68,10 +71,13 @@ class QuizTabla extends LitElement {
       });
   }
   
+  createRenderRoot() {
+    return this;
+  }
 
   render() {
     return html`
-      <div class="w3-card w3-white w3-padding w3-margin">
+      <div class="w3-card w3-white w3-padding w3-margin" style="overflow-x: auto;">
         <h3>Calificación promedio de cada Quiz</h3>
         <table class="w3-table-all w3-hoverable">
           <thead>
@@ -119,10 +125,13 @@ class PreguntasTabla extends LitElement {
       });
   }
   
+  createRenderRoot() {
+    return this;
+  }
 
   render() {
     return html`
-      <div class="w3-card w3-white w3-padding w3-margin">
+      <div class="w3-card w3-white w3-padding w3-margin" style="overflow-y: scroll; max-height="300px;">
         <h3>Porcentaje de preguntas contestadas incorrectamente</h3>
         <table class="w3-table-all w3-hoverable">
           <thead>
@@ -166,19 +175,23 @@ class HoraInicioSesión extends LitElement {
       });
   }
 
+  createRenderRoot() {
+    return this;
+  }
+
   render() {
     return html`
       <div class="w3-card w3-white w3-padding w3-margin">
         <h3>Hora típica de inicio de sesión de más común a menos común</h3>
         <table class="w3-table-all w3-hoverable">
           <thead>
-            <tr class="w3-light-grey">
+            <tr class="w3-light-grey w3-center">
               <th>Hora</th>
             </tr>
           </thead>
           <tbody>
             ${this.hora.map((p) => html`
-              <tr>
+              <tr class="w3-center">
                 <td>${p.hora}</td>
               </tr>
             `)}
@@ -243,6 +256,10 @@ class DistribucionGenero extends LitElement {
     });
   }
 
+  createRenderRoot() {
+    return this;
+  }
+
   render() {
     return html`
       <div class="w3-card w3-white w3-padding w3-margin">
@@ -305,6 +322,10 @@ class DistribucionPaises extends LitElement {
     });
   }
 
+  createRenderRoot() {
+    return this;
+  }
+
   render() {
     return html`
       <div class="w3-card w3-white w3-padding w3-margin">
@@ -334,6 +355,9 @@ class TiempoPromedio extends LitElement {
       });
   }
   
+  createRenderRoot() {
+    return this;
+  }
 
   render() {
     return html`

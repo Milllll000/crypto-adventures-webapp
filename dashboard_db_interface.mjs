@@ -4,6 +4,8 @@
 import mysql from "mysql2/promise";
 import bcrypt from "bcrypt";
 
+const SALT_ROUNDS = 10;
+
 // Hace login a la BD donde se almacenan los datos del dashboard
 async function conectarDash() {
     let connection = await mysql.createConnection({
@@ -14,6 +16,21 @@ async function conectarDash() {
         multipleStatements: true
     });
     return connection;
+}
+
+async function registrarUsuario(connection, nombre, apellido, correo, contrasena) {
+    try {
+        const sqlInsert = "INSERT INTO usuarios(nombre, apellido, correo, contrasena) " +
+                        "VALUES (?, ?, ?, ?)";
+        contrasena = await bcrypt.hash(contrasena, SALT_ROUNDS);
+        let renglones; 
+        const [resultado] = await connection.execute(sqlInsert, [nombre, apellido, correo, contrasena]);
+        console.log(resultado.affectedRows);
+        return resultado.affectedRows > 0;
+    } catch(err) {
+        console.error("Error al tratar de registrar usuario: ", err);
+        throw err;
+    }
 }
 
 // Login para los usuarios del dashboard
@@ -29,8 +46,8 @@ async function loginDash(connection, correo, contrasena) {
         // TODO: Hacer un hashing a las contraseñas para evitar
         // vulnerabilidades.
         // Si las contraseñas no coinciden, se regresa falso
-        const hash = md5(contrasena);
-        if (hash !== datos.contrasena) {
+        const hash = await bcrypt.hash(contrasena, SALT_ROUNDS);
+        if (await bcrypt.compare(contrasena, datos.contrasena)) {
             console.log("Contraseña incorrecta.")
             return false;
         }
@@ -142,12 +159,17 @@ async function getWrongAnsweredQuestionsPercent(connection) {
         "corr AS (SELECT COUNT(*) AS correctas, id_pregunta " +
             "FROM jugadorespreguntas " +
             "WHERE contestado_correct = 1 " +
-            "GROUP BY contestado_correct, id_pregunta) " +
-        "SELECT jp.id_pregunta AS pregunta, incorrectas/(incorrectas + correctas) AS porcentaje " +
-            "FROM jugadorespreguntas jp " +
-            "JOIN inc ON jp.id_pregunta = inc.id_pregunta " +
-            "JOIN corr ON jp.id_pregunta = corr.id_pregunta " +
-            "GROUP BY jp.id_pregunta";
+            "GROUP BY contestado_correct, id_pregunta), " +
+        "totales AS ( " +
+            "SELECT id_pregunta, incorrectas, correctas FROM inc " +
+            "LEFT JOIN corr USING (id_pregunta) " +
+            "UNION " +
+            "SELECT id_pregunta, incorrectas, correctas FROM corr " +
+            "LEFT JOIN inc USING (id_pregunta)) " +
+        "SELECT id_pregunta AS pregunta, " +
+            "COALESCE(incorrectas, 0) / (COALESCE(incorrectas, 0) + " +
+            "COALESCE(correctas, 0)) AS porcentaje " +
+            "FROM totales LIMIT 10";
         const [rows] = await connection.execute(sqlSelect);
         for (let row of rows) {
             results.push({
@@ -208,5 +230,5 @@ async function getTypicalLoginTime(connection) {
 export default {
     getAllPlayers, getGenderDistr, getCountryDistr, getAverageGrade,
     getWrongAnsweredQuestionsPercent, getAverageTime, getTypicalLoginTime, conectarDash,
-    loginDash
+    loginDash, registrarUsuario
 }

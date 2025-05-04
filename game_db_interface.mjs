@@ -1,7 +1,9 @@
 // Archivo para todas las interacciones del juego con la base de datos
 // Autores: Allan Brenes
 import mysql from "mysql2/promise";
-import { md5 } from "js-md5";
+import bcrypt from "bcrypt";
+
+const SALT_ROUNDS = 10;
 
 // Obtener ID del jugador
 async function obtenerID(connection, correo) {
@@ -23,7 +25,7 @@ async function insertarJugador(connection, datos_usuario) {
         // Primero se inserta el query y luego los datos en un arreglo
         await connection.execute(sqlInsert, [datos_usuario.nombre, 
             datos_usuario.apellido, datos_usuario.fecha_nacimiento, 
-            datos_usuario.correo, datos_usuario.contrasena, datos_usuario.pais, 
+            datos_usuario.correo, await bcrypt.hash(datos_usuario.contrasena, SALT_ROUNDS), datos_usuario.pais, 
             datos_usuario.genero]);
     } catch (err) {
         console.error("Query error: ", err);
@@ -36,13 +38,16 @@ async function iniciarSesion(connection, correo, contrasena) {
         const sqlInsert = "SELECT correo, contrasena FROM jugadores WHERE correo = ?";
         const [rows] = await connection.execute(sqlInsert, [correo]);
         // Si no se encuentran registros, se regresa falso
+        console.log(rows);
         if (!rows.length) {
             return false;
         }
+        const contrasenaDeBD = rows[0].contrasena;
         // TODO: Hacer un hashing a las contraseñas para evitar
         // vulnerabilidades.
         // Si las contraseñas no coinciden, se regresa falso
-        if (md5(contrasena) !== rows[0].contrasena) {
+        const match = await bcrypt.compare(contrasena, contrasenaDeBD);
+        if (!match) {
             return false;
         }
         return true;
@@ -61,7 +66,7 @@ async function iniciarSesion(connection, correo, contrasena) {
 async function registrarLogin(connection, id_jugador) {
     try {
         const sqlInsert = "CALL registrarLogin(?)";
-        await connection.execute(sqlInsert, [id_jugador]);
+        await connection.execute(sqlInsert, [id_jugador ?? 25]);
     } catch (err) {
         console.error("Error: ", err);
         throw err;
@@ -76,7 +81,7 @@ async function registrarLogin(connection, id_jugador) {
 async function registrarLogout(connection, id_jugador) {
     try {
         const sqlInsert = "CALL registrarLogout(?)";
-        await connection.execute(sqlInsert, [id_jugador]);
+        return await connection.execute(sqlInsert, [id_jugador ?? 25]);
     } catch (err) {
         console.error("Error: ", err);
         throw err;
@@ -85,8 +90,9 @@ async function registrarLogout(connection, id_jugador) {
 
 async function registrarProgresoPregunta(connection, id_pregunta, id_jugador, correcto) {
     try {
+        console.log(id_pregunta, id_jugador, correcto);
         const sqlInsert = "CALL registrarProgresoPregunta(?, ?, ?)";
-        connection.execute(sqlInsert, [id_pregunta, id_jugador, correcto]);
+        connection.execute(sqlInsert, [id_pregunta, id_jugador ?? 25, correcto]);
     } catch (err) {
         console.error("Error: ", err);
         throw err;
@@ -96,7 +102,8 @@ async function registrarProgresoPregunta(connection, id_pregunta, id_jugador, co
 async function registrarProgresoExamen(connection, id_examen, id_jugador, calificacion) {
     try {
         const sqlInsert = "CALL registrarProgresoExamen(?, ?, ?)";
-        connection.execute(sqlInsert, [id_examen, id_jugador, calificacion]);
+        console.log(id_examen, id_jugador, calificacion);
+        connection.execute(sqlInsert, [id_examen, id_jugador ?? 25, calificacion]);
     } catch (err) {
         console.error("Error: ", err);
         throw err;
