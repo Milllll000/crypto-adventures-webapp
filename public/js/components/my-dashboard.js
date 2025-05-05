@@ -25,7 +25,7 @@ class JugadoresTabla extends LitElement {
 
   render() {
     return html`
-      <div class="w3-card w3-white w3-padding w3-margin w3-center">
+      <div class="w3-card w3-white w3-padding w3-margin w3-center" style="overflow-x: auto;">
         <h3>Información de todos los jugadores</h3>
         <table class="w3-table-all w3-hoverable">
           <thead>

@@ -10,6 +10,7 @@ async function obtenerID(connection, correo) {
     try {
         const sqlInsert = "SELECT id_jugador AS id FROM jugadores WHERE correo = ?";
         const [rows] = await connection.execute(sqlInsert, [correo]);
+        console.log("Datos extraídos: ", rows[0]);
         return parseInt(rows[0].id);
     } catch (err) {
         console.error("Error: ", err);

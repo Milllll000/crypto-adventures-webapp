@@ -13,7 +13,10 @@ const app = express();
 const ip_address = process.env.C9_HOSTNAME ?? "localhost";
 const port = process.env.PORT ?? 8080;
 
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    credentials: true
+}));
 
 // El programa puede entender lo que viene en el URL,
 // necesario para el login del dashboard
@@ -29,7 +32,11 @@ app.use(express.json());
 app.use(session({
     secret: "Bum biddy biddy biddy bum bum",
     genid: (req) => { return uuidv4() },
-    cookie: {}
+    cookie: {
+        httpOnly: true,
+        secure: false,
+        sameSite: "none"
+    }
 }))
 
 /*************************************************
@@ -256,8 +263,7 @@ app.get("/juego/login", async (req, res) => {
         connection = await conectar();
         const datos = req.query;
         // Si se ingresaron datos correctos, se confirma la autenticación
-        const match = await game.iniciarSesion(connection, datos.correo, datos.contrasena);
-        if (match) {
+        if (await game.iniciarSesion(connection, datos.correo, datos.contrasena)) {
             req.session.id_jugador = await game.obtenerID(connection, datos.correo);
             
             await game.registrarLogin(connection, req.session.id_jugador);
@@ -317,6 +323,7 @@ app.post("/juego/guardar-pregunta", /*checarAutenticacion,*/ async (req, res) =>
         connection = await conectar();
         console.log(req.body);
         const datos = req.body;
+        console.log("Id de jugador: ", req.session.id_jugador);
         await game.registrarProgresoPregunta(connection, datos.pregunta,
             req.session.id_jugador, datos.correcto);
         res.json({ mensaje: 1 });
